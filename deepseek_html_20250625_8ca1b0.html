@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Elderly Diet Management for Three Highs Prevention</title>
+    <style>
+        /* [Previous CSS remains unchanged] */
+    </style>
+</head>
+<body>
+    <!-- [Previous HTML remains unchanged until the script section] -->
+
+    <script>
+        // Global variable to hold the food database
+        let foodDatabase = [];
+        
+        // Load the JSON file when the page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            fetch('FoodData_Central_foundation_food_json_2025-04-24.json')
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    foodDatabase = data.FoundationFoods;
+                    console.log('Food database loaded successfully');
+                })
+                .catch(error => {
+                    console.error('Error loading food database:', error);
+                    alert('Error loading food data. Please try again later.');
+                });
+        });
+
+        function getNutrientValue(food, nutrientId) {
+            if (!food || !food.foodNutrients) return null;
+            
+            const nutrient = food.foodNutrients.find(n => n.nutrient.id === nutrientId);
+            return nutrient ? nutrient.amount : null;
+        }
+
+        function checkFood() {
+            const foodInput = document.getElementById('foodInput').value.trim().toLowerCase();
+            const resultSection = document.getElementById('resultSection');
+            const loading = document.getElementById('loading');
+            
+            if (!foodInput) {
+                alert("Please enter a food name");
+                return;
+            }
+            
+            loading.style.display = "block";
+            resultSection.style.display = "none";
+            
+            // Check if database is loaded
+            if (!foodDatabase || foodDatabase.length === 0) {
+                setTimeout(() => {
+                    loading.style.display = "none";
+                    resultSection.innerHTML = `
+                        <div class="warning">
+                            <p>Food database is still loading. Please try again in a moment.</p>
+                        </div>
+                    `;
+                    resultSection.style.display = "block";
+                }, 1000);
+                return;
+            }
+            
+            // Simulate database search delay
+            setTimeout(() => {
+                loading.style.display = "none";
+                
+                // Find food by description (case insensitive)
+                const food = foodDatabase.find(f => 
+                    f.description.toLowerCase().includes(foodInput)
+                );
+                
+                if (food) {
+                    // Get specific nutrient values
+                    const sodium = getNutrientValue(food, 1093); // Sodium ID
+                    const sugar = getNutrientValue(food, 2000); // Sugar ID
+                    const saturatedFat = getNutrientValue(food, 1258); // Saturated Fat ID
+                    
+                    // Determine status based on thresholds
+                    const sodiumStatus = sodium > 500 ? 'High' : 'Low';
+                    const sugarStatus = sugar > 5 ? 'High' : 'Low';
+                    const fatStatus = saturatedFat > 3 ? 'High' : 'Low';
+                    
+                    // Overall status
+                    const warningCount = [sodiumStatus, sugarStatus, fatStatus].filter(s => s === 'High').length;
+                    const overallStatus = warningCount > 1 ? 'warning' : 'safe';
+                    const overallMessage = warningCount > 1 
+                        ? 'Consume in moderation due to multiple high-risk nutrients' 
+                        : 'Generally safe for occasional consumption';
+                    
+                    let resultHTML = `
+                        <h3>Results for: ${food.description}</h3>
+                        <table>
+                            <tr>
+                                <th>Nutrient</th>
+                                <th>Amount (per serving)</th>
+                                <th>Concern Level</th>
+                            </tr>
+                            <tr>
+                                <td>Sodium</td>
+                                <td>${sodium !== null ? sodium + 'mg' : 'Data not available'}</td>
+                                <td>${sodiumStatus}</td>
+                            </tr>
+                            <tr>
+                                <td>Sugar</td>
+                                <td>${sugar !== null ? sugar + 'g' : 'Data not available'}</td>
+                                <td>${sugarStatus}</td>
+                            </tr>
+                            <tr>
+                                <td>Saturated Fat</td>
+                                <td>${saturatedFat !== null ? saturatedFat + 'g' : 'Data not available'}</td>
+                                <td>${fatStatus}</td>
+                            </tr>
+                        </table>
+                        <div class="${overallStatus}" style="margin-top: 20px; padding: 15px;">
+                            <strong>Recommendation:</strong> ${overallMessage}
+                        </div>
+                    `;
+                    
+                    resultSection.innerHTML = resultHTML;
+                    resultSection.style.display = "block";
+                } else {
+                    resultSection.innerHTML = `
+                        <div class="warning">
+                            <p>Food not found in our database. Please try another item or consult with a nutritionist.</p>
+                            <p>Common safe foods for three highs: steamed fish, leafy greens, whole grains, berries, nuts (unsalted).</p>
+                        </div>
+                    `;
+                    resultSection.style.display = "block";
+                }
+            }, 1000);
+        }
+    </script>
+</body>
+</html>
