@@ -199,11 +199,11 @@
 
     <script>
         // Global variable to hold the food database
-        let foodDatabase = {};
+        let foodDatabase = [];
         
         // Load the JSON file when the page loads
         document.addEventListener('DOMContentLoaded', function() {
-            fetch('foods.json')
+            fetch('FoodData_Central_foundation_food_json_2025-04-24.json')
                 .then(response => {
                     if (!response.ok) {
                         throw new Error('Network response was not ok');
@@ -211,7 +211,7 @@
                     return response.json();
                 })
                 .then(data => {
-                    foodDatabase = data;
+                    foodDatabase = data.FoundationFoods;
                     console.log('Food database loaded successfully');
                 })
                 .catch(error => {
@@ -220,8 +220,15 @@
                 });
         });
 
+        function getNutrientValue(food, nutrientId) {
+            if (!food || !food.foodNutrients) return null;
+            
+            const nutrient = food.foodNutrients.find(n => n.nutrient.id === nutrientId);
+            return nutrient ? nutrient.amount : null;
+        }
+
         function checkFood() {
-            const foodInput = document.getElementById('foodInput').value.toLowerCase();
+            const foodInput = document.getElementById('foodInput').value.trim().toLowerCase();
             const resultSection = document.getElementById('resultSection');
             const loading = document.getElementById('loading');
             
@@ -234,7 +241,7 @@
             resultSection.style.display = "none";
             
             // Check if database is loaded
-            if (Object.keys(foodDatabase).length === 0) {
+            if (!foodDatabase || foodDatabase.length === 0) {
                 setTimeout(() => {
                     loading.style.display = "none";
                     resultSection.innerHTML = `
@@ -251,11 +258,31 @@
             setTimeout(() => {
                 loading.style.display = "none";
                 
-                if (foodDatabase[foodInput]) {
-                    const food = foodDatabase[foodInput];
+                // Find food by description (case insensitive)
+                const food = foodDatabase.find(f => 
+                    f.description.toLowerCase().includes(foodInput)
+                );
+                
+                if (food) {
+                    // Get specific nutrient values
+                    const sodium = getNutrientValue(food, 1093); // Sodium ID
+                    const sugar = getNutrientValue(food, 2000); // Sugar ID
+                    const saturatedFat = getNutrientValue(food, 1258); // Saturated Fat ID
+                    
+                    // Determine status based on thresholds
+                    const sodiumStatus = sodium > 500 ? 'High' : 'Low';
+                    const sugarStatus = sugar > 5 ? 'High' : 'Low';
+                    const fatStatus = saturatedFat > 3 ? 'High' : 'Low';
+                    
+                    // Overall status
+                    const warningCount = [sodiumStatus, sugarStatus, fatStatus].filter(s => s === 'High').length;
+                    const overallStatus = warningCount > 1 ? 'warning' : 'safe';
+                    const overallMessage = warningCount > 1 
+                        ? 'Consume in moderation due to multiple high-risk nutrients' 
+                        : 'Generally safe for occasional consumption';
+                    
                     let resultHTML = `
-                        <h3>Results for: ${foodInput.charAt(0).toUpperCase() + foodInput.slice(1)}</h3>
-                        <p><strong>Ingredients:</strong> ${food.ingredients.join(', ')}</p>
+                        <h3>Results for: ${food.description}</h3>
                         <table>
                             <tr>
                                 <th>Nutrient</th>
@@ -264,27 +291,22 @@
                             </tr>
                             <tr>
                                 <td>Sodium</td>
-                                <td>${food.sodium}mg</td>
-                                <td>${food.sodium > 500 ? 'High' : 'Low'}</td>
+                                <td>${sodium !== null ? sodium + 'mg' : 'Data not available'}</td>
+                                <td>${sodiumStatus}</td>
                             </tr>
                             <tr>
                                 <td>Sugar</td>
-                                <td>${food.sugar}g</td>
-                                <td>${food.sugar > 5 ? 'High' : 'Low'}</td>
+                                <td>${sugar !== null ? sugar + 'g' : 'Data not available'}</td>
+                                <td>${sugarStatus}</td>
                             </tr>
                             <tr>
                                 <td>Saturated Fat</td>
-                                <td>${food.saturatedFat}g</td>
-                                <td>${food.saturatedFat > 3 ? 'High' : 'Low'}</td>
-                            </tr>
-                            <tr>
-                                <td>Glycemic Index</td>
-                                <td>${food.glycemicIndex}</td>
-                                <td>${food.glycemicIndex > 70 ? 'High' : food.glycemicIndex > 55 ? 'Medium' : 'Low'}</td>
+                                <td>${saturatedFat !== null ? saturatedFat + 'g' : 'Data not available'}</td>
+                                <td>${fatStatus}</td>
                             </tr>
                         </table>
-                        <div class="${food.status === 'warning' ? 'warning' : 'safe'}" style="margin-top: 20px; padding: 15px;">
-                            <strong>Recommendation:</strong> ${food.message}
+                        <div class="${overallStatus}" style="margin-top: 20px; padding: 15px;">
+                            <strong>Recommendation:</strong> ${overallMessage}
                         </div>
                     `;
                     
