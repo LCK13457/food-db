@@ -3,221 +3,148 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Food Nutrition Checker</title>
+    <title>Food Info Generator</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Inter font from Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         body {
-            font-family: Arial, sans-serif;
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 20px;
-            background-color: #f4f4f4;
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f4f8; /* Light blue-gray background */
         }
-        .container {
-            background-color: white;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        /* Custom scrollbar for result display */
+        .scrollable-content::-webkit-scrollbar {
+            width: 8px;
         }
-        h1 {
-            text-align: center;
-            color: #333;
+        .scrollable-content::-webkit-scrollbar-track {
+            background: #e2e8f0; /* Lighter track */
+            border-radius: 10px;
         }
-        .search-section {
-            margin-bottom: 20px;
+        .scrollable-content::-webkit-scrollbar-thumb {
+            background: #94a3b8; /* Darker thumb */
+            border-radius: 10px;
         }
-        .search-section input {
-            padding: 10px;
-            font-size: 16px;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-        }
-        .search-section button {
-            padding: 10px 20px;
-            font-size: 16px;
-            background-color: #28a745;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-        }
-        .search-section button:hover {
-            background-color: #218838;
-        }
-        .loading {
-            display: none;
-            text-align: center;
-            color: #555;
-        }
-        .result-section {
-            display: none;
-            margin-top: 20px;
-            padding: 15px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-        }
-        .warning {
-            color: #d9534f;
-            font-weight: bold;
-        }
-        .nutrient-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 10px;
-        }
-        .nutrient-table th, .nutrient-table td {
-            border: 1px solid #ddd;
-            padding: 8px;
-            text-align: left;
-        }
-        .nutrient-table th {
-            background-color: #f2f2f2;
+        .scrollable-content::-webkit-scrollbar-thumb:hover {
+            background: #64748b; /* Even darker on hover */
         }
     </style>
 </head>
-<body>
-    <div class="container">
-        <h1>Food Nutrition Checker</h1>
-        
-        <div class="search-section">
-            <h2>Check Food Nutrition Information</h2>
-            <p>Enter a food item to check its nutritional content</p>
-            
-            <div>
-                <input type="text" id="foodInput" placeholder="Enter food name (e.g., Hummus)" style="width: 70%;">
-                <button onclick="checkFood()">Check Nutrition</button>
-            </div>
-            
-            <div id="loading" class="loading">
-                <p>Loading food data...</p>
+<body class="flex items-center justify-center min-h-screen p-4">
+    <div class="bg-white p-8 rounded-lg shadow-xl w-full max-w-md border border-gray-200">
+        <h1 class="text-3xl font-bold text-center text-gray-800 mb-6">Food Information App</h1>
+
+        <!-- Input Section -->
+        <div class="mb-6">
+            <label for="foodNameInput" class="block text-gray-700 text-sm font-semibold mb-2">Enter Food Name:</label>
+            <input
+                type="text"
+                id="foodNameInput"
+                placeholder="e.g., Apple, Chicken Breast, Oatmeal"
+                class="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200"
+            >
+        </div>
+
+        <!-- Button Section -->
+        <button
+            id="searchButton"
+            class="w-full bg-blue-600 text-white py-3 rounded-md font-semibold hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition duration-200 ease-in-out shadow-md hover:shadow-lg"
+        >
+            Get Info
+        </button>
+
+        <!-- Loading Indicator -->
+        <div id="loadingIndicator" class="mt-6 text-center text-blue-600 font-medium hidden">
+            <div class="flex items-center justify-center space-x-2">
+                <svg class="animate-spin h-5 w-5 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                <span>Loading...</span>
             </div>
         </div>
-        
-        <div id="resultSection" class="result-section"></div>
+
+        <!-- Results Display Area -->
+        <div id="resultsDisplay" class="mt-6 p-4 bg-gray-50 border border-gray-200 rounded-md shadow-inner min-h-[150px] max-h-[400px] overflow-y-auto scrollable-content text-gray-800 text-sm leading-relaxed whitespace-pre-wrap">
+            <p class="text-gray-500 italic">Enter a food name above and click "Get Info" to see details.</p>
+        </div>
     </div>
 
-    <script>
-        // Global variable to hold the food database
-        let foodDatabase = [];
-        let isDatabaseLoaded = false;
-        
-        // Load the JSON file when the page loads
-        document.addEventListener('DOMContentLoaded', function() {
-            const loading = document.getElementById('loading');
-            loading.style.display = "block";
-            
-            // Note: For local development, ensure the JSON file is served correctly (e.g., via a local server)
-            fetch('FoodData_Central_foundation_food_json_2025-04-24.json')
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error('Network response was not ok');
-                    }
-                    return response.json();
-                })
-                .then(data => {
-                    if (data.FoundationFoods && Array.isArray(data.FoundationFoods)) {
-                        foodDatabase = data.FoundationFoods;
-                        isDatabaseLoaded = true;
-                        console.log('Food database loaded successfully with', foodDatabase.length, 'items');
-                    } else {
-                        console.error('Unexpected data format');
-                    }
-                    loading.style.display = "none";
-                })
-                .catch(error => {
-                    console.error('Error loading food database:', error);
-                    loading.style.display = "none";
-                    alert('Error loading food data. Please try again later.');
+    <script type="module">
+        // Get references to HTML elements
+        const foodNameInput = document.getElementById('foodNameInput');
+        const searchButton = document.getElementById('searchButton');
+        const loadingIndicator = document.getElementById('loadingIndicator');
+        const resultsDisplay = document.getElementById('resultsDisplay');
+
+        // Function to handle the search button click
+        async function handleSearch() {
+            const foodName = foodNameInput.value.trim();
+
+            if (!foodName) {
+                resultsDisplay.innerHTML = '<p class="text-red-500 font-medium">Please enter a food name.</p>';
+                return;
+            }
+
+            // Show loading indicator and clear previous results
+            loadingIndicator.classList.remove('hidden');
+            resultsDisplay.innerHTML = ''; // Clear content
+            searchButton.disabled = true; // Disable button during loading
+
+            try {
+                // Construct the prompt for the Gemini model
+                const prompt = `Provide the main ingredients and key nutritional facts (calories, protein, carbs, fat, vitamins, minerals) for "${foodName}". Please format the output clearly with headings for "Ingredients" and "Nutritional Facts".`;
+
+                // Gemini API configuration
+                let chatHistory = [];
+                chatHistory.push({ role: "user", parts: [{ text: prompt }] });
+                const payload = { contents: chatHistory };
+                const apiKey = ""; // API key will be provided by Canvas runtime if empty
+                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+
+                // Make the fetch call to the Gemini API
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
                 });
-        });
 
-        function checkFood() {
-            const foodInput = document.getElementById('foodInput').value.trim().toLowerCase();
-            const resultSection = document.getElementById('resultSection');
-            const loading = document.getElementById('loading');
-            
-            if (!foodInput) {
-                alert("Please enter a food name");
-                return;
-            }
-            
-            if (!isDatabaseLoaded) {
-                resultSection.innerHTML = `
-                    <div class="warning">
-                        <p>Food database is still loading. Please try again in a moment.</p>
-                    </div>
-                `;
-                resultSection.style.display = "block";
-                return;
-            }
-            
-            loading.style.display = "block";
-            resultSection.style.display = "none";
-            
-            setTimeout(() => {
-                loading.style.display = "none";
-                
-                const foundFoods = findFoodInDatabase(foodInput);
-                
-                if (foundFoods.length > 0) {
-                    displayFoodInfo(foundFoods[0], resultSection);
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(`API error: ${response.status} - ${errorData.error.message || response.statusText}`);
+                }
+
+                const result = await response.json();
+
+                // Check if the response has content
+                if (result.candidates && result.candidates.length > 0 &&
+                    result.candidates[0].content && result.candidates[0].content.parts &&
+                    result.candidates[0].content.parts.length > 0) {
+                    const generatedText = result.candidates[0].content.parts[0].text;
+                    resultsDisplay.innerText = generatedText; // Display the raw generated text
                 } else {
-                    resultSection.innerHTML = `
-                        <div class="warning">
-                            <p>Food not found in our database. Please try another item.</p>
-                            <p>Some available foods: Hummus, Shallots, Prune Juice, Pomegranate Juice, Tart Cherry Juice.</p>
-                        </div>
-                    `;
-                    resultSection.style.display = "block";
+                    resultsDisplay.innerHTML = '<p class="text-red-500 font-medium">No information found for that food. Please try another name or be more specific.</p>';
                 }
-            }, 300);
-        }
 
-        // Function to search for food in the database
-        function findFoodInDatabase(foodInput) {
-            return foodDatabase.filter(food => 
-                food.description.toLowerCase().includes(foodInput)
-            );
-        }
-
-        // Function to display food nutritional information
-        function displayFoodInfo(food, resultSection) {
-            let html = `<h3>${food.description}</h3>`;
-            html += `<p><strong>Food Category:</strong> ${food.foodCategory.description}</p>`;
-            html += `<p><strong>FDC ID:</strong> ${food.fdcId}</p>`;
-            
-            if (food.foodPortions && food.foodPortions.length > 0) {
-                html += `<p><strong>Portion Size:</strong> ${food.foodPortions[0].amount} ${food.foodPortions[0].measureUnit.name} (${food.foodPortions[0].gramWeight} g)</p>`;
+            } catch (error) {
+                console.error("Error fetching food information:", error);
+                resultsDisplay.innerHTML = `<p class="text-red-500 font-medium">An error occurred: ${error.message}. Please try again.</p>`;
+            } finally {
+                // Hide loading indicator and re-enable button
+                loadingIndicator.classList.add('hidden');
+                searchButton.disabled = false;
             }
-
-            html += `<h4>Nutritional Information (per 100g):</h4>`;
-            html += `<table class="nutrient-table">
-                        <tr>
-                            <th>Nutrient</th>
-                            <th>Amount</th>
-                            <th>Unit</th>
-                        </tr>`;
-
-            // Display key nutrients
-            const keyNutrients = [
-                'Energy', 'Protein', 'Total lipid (fat)', 'Carbohydrate, by difference', 
-                'Fiber, total dietary', 'Sugars, Total', 'Calcium, Ca', 'Iron, Fe', 
-                'Sodium, Na', 'Vitamin C, total ascorbic acid', 'Vitamin A, RAE'
-            ];
-
-            food.foodNutrients.forEach(nutrient => {
-                if (keyNutrients.includes(nutrient.nutrient.name)) {
-                    html += `<tr>
-                                <td>${nutrient.nutrient.name}</td>
-                                <td>${nutrient.amount.toFixed(2)}</td>
-                                <td>${nutrient.nutrient.unitName}</td>
-                             </tr>`;
-                }
-            });
-
-            html += `</table>`;
-            resultSection.innerHTML = html;
-            resultSection.style.display = "block";
         }
+
+        // Add event listener to the search button
+        searchButton.addEventListener('click', handleSearch);
+
+        // Allow pressing Enter key to trigger search
+        foodNameInput.addEventListener('keypress', (event) => {
+            if (event.key === 'Enter') {
+                handleSearch();
+            }
+        });
     </script>
 </body>
 </html>
