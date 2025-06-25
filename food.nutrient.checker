@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Food Nutrition Checker</title>
+    <style>
+        /* (Keep all your existing styles the same) */
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Food Nutrition Checker</h1>
+        
+        <div class="search-section">
+            <h2>Check Food Nutrition Information</h2>
+            <p>Enter a food item to check its nutritional content</p>
+            
+            <div>
+                <input type="text" id="foodInput" placeholder="Enter food name (e.g., Hummus)" style="width: 70%;">
+                <button onclick="checkFood()">Check Nutrition</button>
+            </div>
+            
+            <div id="loading" class="loading">
+                <p>Loading food data...</p>
+            </div>
+        </div>
+        
+        <div id="resultSection" class="result-section"></div>
+    </div>
+
+    <script>
+        // Global variable to hold the food database
+        let foodDatabase = [];
+        let isDatabaseLoaded = false;
+        
+        // Load the JSON file when the page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            const loading = document.getElementById('loading');
+            loading.style.display = "block";
+            
+            fetch('FoodData_Central_foundation_food_json_2025-04-24.json')
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.FoundationFoods && Array.isArray(data.FoundationFoods)) {
+                        foodDatabase = data.FoundationFoods;
+                        isDatabaseLoaded = true;
+                        console.log('Food database loaded successfully with', foodDatabase.length, 'items');
+                    } else {
+                        console.error('Unexpected data format');
+                    }
+                    loading.style.display = "none";
+                })
+                .catch(error => {
+                    console.error('Error loading food database:', error);
+                    loading.style.display = "none";
+                    alert('Error loading food data. Please try again later.');
+                });
+        });
+
+        function checkFood() {
+            const foodInput = document.getElementById('foodInput').value.trim().toLowerCase();
+            const resultSection = document.getElementById('resultSection');
+            const loading = document.getElementById('loading');
+            
+            if (!foodInput) {
+                alert("Please enter a food name");
+                return;
+            }
+            
+            if (!isDatabaseLoaded) {
+                resultSection.innerHTML = `
+                    <div class="warning">
+                        <p>Food database is still loading. Please try again in a moment.</p>
+                    </div>
+                `;
+                resultSection.style.display = "block";
+                return;
+            }
+            
+            loading.style.display = "block";
+            resultSection.style.display = "none";
+            
+            setTimeout(() => {
+                loading.style.display = "none";
+                
+                const foundFoods = findFoodInDatabase(foodInput);
+                
+                if (foundFoods.length > 0) {
+                    displayFoodInfo(foundFoods[0], resultSection);
+                } else {
+                    resultSection.innerHTML = `
+                        <div class="warning">
+                            <p>Food not found in our database. Please try another item.</p>
+                            <p>Some available foods: Hummus, Tomatoes, Beans, Frankfurter, Almonds.</p>
+                        </div>
+                    `;
+                    resultSection.style.display = "block";
+                }
+            }, 300);
+        }
+
+        /* (Keep all other functions exactly the same as in the previous version) */
+        
+    </script>
+</body>
+</html>
