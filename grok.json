@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Food Nutrition Checker</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f4f4f4;
+        }
+        .container {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+        }
+        .search-section {
+            margin-bottom: 20px;
+        }
+        .search-section input {
+            padding: 10px;
+            font-size: 16px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        .search-section button {
+            padding: 10px 20px;
+            font-size: 16px;
+            background-color: #28a745;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .search-section button:hover {
+            background-color: #218838;
+        }
+        .loading {
+            display: none;
+            text-align: center;
+            color: #555;
+        }
+        .result-section {
+            display: none;
+            margin-top: 20px;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .warning {
+            color: #d9534f;
+            font-weight: bold;
+        }
+        .nutrient-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+        .nutrient-table th, .nutrient-table td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        .nutrient-table th {
+            background-color: #f2f2f2;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Food Nutrition Checker</h1>
+        
+        <div class="search-section">
+            <h2>Check Food Nutrition Information</h2>
+            <p>Enter a food item to check its nutritional content</p>
+            
+            <div>
+                <input type="text" id="foodInput" placeholder="Enter food name (e.g., Hummus)" style="width: 70%;">
+                <button onclick="checkFood()">Check Nutrition</button>
+            </div>
+            
+            <div id="loading" class="loading">
+                <p>Loading food data...</p>
+            </div>
+        </div>
+        
+        <div id="resultSection" class="result-section"></div>
+    </div>
+
+    <script>
+        // Global variable to hold the food database
+        let foodDatabase = [];
+        let isDatabaseLoaded = false;
+        
+        // Load the JSON file when the page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            const loading = document.getElementById('loading');
+            loading.style.display = "block";
+            
+            // Note: For local development, ensure the JSON file is served correctly (e.g., via a local server)
+            fetch('FoodData_Central_foundation_food_json_2025-04-24.json')
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.FoundationFoods && Array.isArray(data.FoundationFoods)) {
+                        foodDatabase = data.FoundationFoods;
+                        isDatabaseLoaded = true;
+                        console.log('Food database loaded successfully with', foodDatabase.length, 'items');
+                    } else {
+                        console.error('Unexpected data format');
+                    }
+                    loading.style.display = "none";
+                })
+                .catch(error => {
+                    console.error('Error loading food database:', error);
+                    loading.style.display = "none";
+                    alert('Error loading food data. Please try again later.');
+                });
+        });
+
+        function checkFood() {
+            const foodInput = document.getElementById('foodInput').value.trim().toLowerCase();
+            const resultSection = document.getElementById('resultSection');
+            const loading = document.getElementById('loading');
+            
+            if (!foodInput) {
+                alert("Please enter a food name");
+                return;
+            }
+            
+            if (!isDatabaseLoaded) {
+                resultSection.innerHTML = `
+                    <div class="warning">
+                        <p>Food database is still loading. Please try again in a moment.</p>
+                    </div>
+                `;
+                resultSection.style.display = "block";
+                return;
+            }
+            
+            loading.style.display = "block";
+            resultSection.style.display = "none";
+            
+            setTimeout(() => {
+                loading.style.display = "none";
+                
+                const foundFoods = findFoodInDatabase(foodInput);
+                
+                if (foundFoods.length > 0) {
+                    displayFoodInfo(foundFoods[0], resultSection);
+                } else {
+                    resultSection.innerHTML = `
+                        <div class="warning">
+                            <p>Food not found in our database. Please try another item.</p>
+                            <p>Some available foods: Hummus, Shallots, Prune Juice, Pomegranate Juice, Tart Cherry Juice.</p>
+                        </div>
+                    `;
+                    resultSection.style.display = "block";
+                }
+            }, 300);
+        }
+
+        // Function to search for food in the database
+        function findFoodInDatabase(foodInput) {
+            return foodDatabase.filter(food => 
+                food.description.toLowerCase().includes(foodInput)
+            );
+        }
+
+        // Function to display food nutritional information
+        function displayFoodInfo(food, resultSection) {
+            let html = `<h3>${food.description}</h3>`;
+            html += `<p><strong>Food Category:</strong> ${food.foodCategory.description}</p>`;
+            html += `<p><strong>FDC ID:</strong> ${food.fdcId}</p>`;
+            
+            if (food.foodPortions && food.foodPortions.length > 0) {
+                html += `<p><strong>Portion Size:</strong> ${food.foodPortions[0].amount} ${food.foodPortions[0].measureUnit.name} (${food.foodPortions[0].gramWeight} g)</p>`;
+            }
+
+            html += `<h4>Nutritional Information (per 100g):</h4>`;
+            html += `<table class="nutrient-table">
+                        <tr>
+                            <th>Nutrient</th>
+                            <th>Amount</th>
+                            <th>Unit</th>
+                        </tr>`;
+
+            // Display key nutrients
+            const keyNutrients = [
+                'Energy', 'Protein', 'Total lipid (fat)', 'Carbohydrate, by difference', 
+                'Fiber, total dietary', 'Sugars, Total', 'Calcium, Ca', 'Iron, Fe', 
+                'Sodium, Na', 'Vitamin C, total ascorbic acid', 'Vitamin A, RAE'
+            ];
+
+            food.foodNutrients.forEach(nutrient => {
+                if (keyNutrients.includes(nutrient.nutrient.name)) {
+                    html += `<tr>
+                                <td>${nutrient.nutrient.name}</td>
+                                <td>${nutrient.amount.toFixed(2)}</td>
+                                <td>${nutrient.nutrient.unitName}</td>
+                             </tr>`;
+                }
+            });
+
+            html += `</table>`;
+            resultSection.innerHTML = html;
+            resultSection.style.display = "block";
+        }
+    </script>
+</body>
+</html>
