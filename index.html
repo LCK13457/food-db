@@ -140,7 +140,62 @@
     </style>
 </head>
 <body>
-    <!-- [Previous HTML remains unchanged until the script section] -->
+    <div class="health-tips" id="healthTips">
+        <button class="close-tips" onclick="document.getElementById('healthTips').style.display='none'">×</button>
+        <h2>Daily Health Tips for Elderly</h2>
+        <div class="tip">
+            <h3>Hydration is Key</h3>
+            <p>Drink at least 6-8 glasses of water daily to maintain proper body function and help control blood pressure.</p>
+        </div>
+        <div class="tip">
+            <h3>Balanced Meals</h3>
+            <p>Include vegetables (50%), lean protein (25%), and whole grains (25%) in each meal to manage the three highs.</p>
+        </div>
+        <div class="tip">
+            <h3>Reduce Sodium</h3>
+            <p>Limit processed foods and use herbs/spices instead of salt to help control hypertension.</p>
+        </div>
+        <div class="tip">
+            <h3>Healthy Snacking</h3>
+            <p>Choose nuts, fresh fruits, or yogurt instead of sugary or salty snacks.</p>
+        </div>
+    </div>
+
+    <div class="container">
+        <h1>Elderly Diet Management for Three Highs Prevention</h1>
+        
+        <div class="search-section">
+            <h2>Check Food Ingredients</h2>
+            <p>Enter a food item to check if it's suitable for elderly with three highs conditions (high blood pressure, high cholesterol, high blood sugar).</p>
+            
+            <div>
+                <input type="text" id="foodInput" placeholder="Enter food name (e.g., fried chicken)" style="width: 70%;">
+                <button onclick="checkFood()">Check Ingredients</button>
+            </div>
+            <div id="loading">Loading food information...</div>
+        </div>
+        
+        <div class="result-section" id="resultSection"></div>
+        
+        <div class="nutrient-info">
+            <h2>Key Nutrients to Monitor</h2>
+            <div class="nutrient-card">
+                <h3>Sodium</h3>
+                <p><strong>Recommended:</strong> &lt; 1500mg/day</p>
+                <p>High sodium intake can raise blood pressure. Avoid processed foods and canned goods with added salt.</p>
+            </div>
+            <div class="nutrient-card">
+                <h3>Sugar</h3>
+                <p><strong>Recommended:</strong> &lt; 25g/day</p>
+                <p>Excess sugar contributes to diabetes. Limit sweets, sugary drinks, and refined carbohydrates.</p>
+            </div>
+            <div class="nutrient-card">
+                <h3>Saturated Fat</h3>
+                <p><strong>Recommended:</strong> &lt; 13g/day</p>
+                <p>Too much saturated fat can increase cholesterol. Choose lean meats and plant-based proteins.</p>
+            </div>
+        </div>
+    </div>
 
     <script>
         // Global variable to hold the food database
