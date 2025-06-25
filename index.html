@@ -99,7 +99,8 @@
                 let chatHistory = [];
                 chatHistory.push({ role: "user", parts: [{ text: prompt }] });
                 const payload = { contents: chatHistory };
-                const apiKey = ""; // API key will be provided by Canvas runtime if empty
+                const encodedkey = "c2stb3ItdjEtNzE3MmE3M2Y1Yjc0OGU0ZmVhMDA1MTU1ZGEzNzcwNDRjMDA1YTk4YzI1NzI4MjdmNjBlN2YwOThiMWNlOWVhMQ=="; //
+                const apiKey = atob(encodedkey);
                 const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
 
                 // Make the fetch call to the Gemini API
